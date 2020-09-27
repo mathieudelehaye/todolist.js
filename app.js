@@ -18,6 +18,10 @@ app.use(express.static("public"))
 
 app.get("/", function(req, res) {
 
+  day = date.getDate()
+
+  console.log(day)
+
   res.render("list", {
     listTitle: day,
     newListitems: items

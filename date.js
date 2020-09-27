@@ -1,8 +1,9 @@
 //jshint esversion: 6
 
-console.log(module) 
+console.log(module)
 
 function getDate() {
+
   let today = new Date()
 
   let options = {
@@ -12,4 +13,8 @@ function getDate() {
   }
 
   let day = today.toLocaleString("en-US", options)
+
+  return day 
 }
+
+module.exports.getDate = getDate
