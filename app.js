@@ -4,6 +4,7 @@ const express = require('express')
 const bodyParser = require("body-parser")
 const date = require(__dirname + "/date.js")
 const mongoose = require("mongoose")
+const _ = require("lodash")
 
 const app = express()
 
@@ -16,14 +17,22 @@ app.use(express.static("public"))
 
 mongoose.connect("mongodb://localhost:27017/todolistDB", {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
+  useFindAndModify: false
 })
 
 const itemSchema = {
   name: String
 }
 
+const listSchema = {
+  name: String,
+  items: [itemSchema]
+}
+
 const Item = mongoose.model("Item", itemSchema)
+
+const List = mongoose.model("List", listSchema)
 
 const item1 = new Item({
   name: "Welcome to your todolist!"
@@ -66,25 +75,85 @@ app.get("/", function(req, res) {
 
 app.post('/', function(req, res) {
 
-  const item = req.body.newItem
+  const itemName = req.body.newItem
+  const listName = req.body.list
 
-  if (req.body.list == "Work") {
+  const item = new Item({
+    name: itemName
+  })
 
-    workItems.push(item)
-    res.redirect("/work")
-
-  } else {
-
-    items.push(item)
+  if (listName === "Today") {
+    item.save()
     res.redirect("/")
+  } else {
+    List.findOne({
+      name: listName
+    }, function(err, foundList) {
+      foundList.items.push(item)
+      foundList.save()
+      res.redirect("/" + listName)
+    })
   }
-
 })
 
-app.get("/work", function(req, res) {
-  res.render("list", {
-    listTitle: "Work List",
-    newListitems: workItems
+app.post('/delete', function(req, res) {
+
+  const checkedItemId = req.body.checkbox
+  const listName = req.body.listName
+
+  if (listName === "Today") {
+    Item.findByIdAndRemove(checkedItemId, function(err) {
+      if (!err) {
+        console.log("Successfully deleted checked item.")
+        res.redirect("/")
+      }
+    })
+  } else {
+
+    List.findOneAndUpdate({
+      name: listName
+    }, {
+      $pull: {
+        items: {
+          _id: checkedItemId
+        }
+      }
+    }, function(err, foundList) {
+      if (!err) {
+        res.redirect("/" + listName)
+      }
+    })
+  }
+})
+
+app.get('/:customListName', function(req, res) {
+
+  const customListName = _.capitalize(req.params.customListName)
+
+  List.findOne({
+    name: customListName
+  }, function(err, foundList) {
+    if (!err) {
+      if (!foundList) {
+        // List does not exist, we create one
+        const list = new List({
+          name: customListName,
+          items: defaultItems
+        })
+
+        list.save()
+
+        console.log("New list created: " + customListName)
+
+        res.redirect("/" + customListName)
+      } else {
+        // List has been found, we render it
+        res.render("list", {
+          listTitle: foundList.name,
+          newListitems: foundList.items
+        })
+      }
+    }
   })
 })
 
