@@ -15,7 +15,7 @@ app.use(bodyParser.urlencoded({
 }))
 app.use(express.static("public"))
 
-mongoose.connect("mongodb+srv://admin-mathieu:Test123@cluster0.uzslh.mongodb.net/test?retryWrites=true&w=majority", {
+mongoose.connect("...", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   useFindAndModify: false
